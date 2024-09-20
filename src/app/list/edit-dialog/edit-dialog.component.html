@@ -1,0 +1,32 @@
+<h2 mat-dialog-title>Edit {{this.data.name}}</h2>
+<mat-dialog-content>
+    <mat-form-field>
+        <mat-label>New Name</mat-label>
+        <input
+            matInput
+            (change)="onChangeInput('name', $event)"
+            [value]="element().name"
+        />
+    </mat-form-field>
+    <mat-form-field>
+        <mat-label>New Weight</mat-label>
+        <input
+            matInput
+            type="number"
+            (change)="onChangeInput('weight', $event)"
+            [value]="element().weight"
+        />
+    </mat-form-field>
+    <mat-form-field>
+        <mat-label>New Symbol</mat-label>
+        <input
+            matInput
+            (change)="onChangeInput('symbol', $event)"
+            [value]="element().symbol"
+        />
+    </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions>
+    <button mat-button (click)="onDiscardClick()">Discard</button>
+    <button mat-button [mat-dialog-close]="element()" cdkFocusInitial>Save</button>
+</mat-dialog-actions>

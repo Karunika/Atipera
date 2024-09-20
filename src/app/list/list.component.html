@@ -1,0 +1,18 @@
+<div>
+    <div>
+        <mat-form-field>
+            <mat-label>New Name</mat-label>
+            <input
+                matInput
+                [formControl]="queryName"
+            />
+        </mat-form-field>
+    </div>
+
+    <ul *ngFor="let element of ELEMENT_DATA() | nameQueryFilter: debouncedQueryName">
+        <li>
+            {{element.name}}
+            <button (click)="openEditDialog(element)">edit</button>
+        </li>
+    </ul>
+</div>
