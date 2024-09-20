@@ -1,13 +1,12 @@
 import { Component, inject, model, Pipe, PipeTransform } from '@angular/core'
-import { FormControl } from '@angular/forms';
 import { NgFor } from '@angular/common'
 import { MatDialog } from '@angular/material/dialog';
 import { EditDialog } from './edit-dialog/edit-dialog.component';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { ReactiveFormsModule } from '@angular/forms';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
 
 interface PeriodicElement {
     position: number,
@@ -36,7 +35,6 @@ export class NameQueryFilter implements PipeTransform {
         MatInputModule,
         FormsModule,
         NameQueryFilter,
-        ReactiveFormsModule
     ]
 })
 export class ListComponent {
@@ -52,20 +50,18 @@ export class ListComponent {
         { position: 9, name: 'Fluorine', weight: 18.9984, symbol: 'F' },
         { position: 10, name: 'Neon', weight: 20.1797, symbol: 'Ne' },
     ]);
-    readonly queryName = new FormControl('');
+    readonly queryName = model<string>('')
     debouncedQueryName = ''
 
-    dialog = inject(MatDialog)
-
     constructor() {
-        this.queryName.valueChanges.pipe(
-            debounceTime(2000),
-
-            distinctUntilChanged()
-        ).subscribe(value => {
-            this.debouncedQueryName = value!;
-        });
+        toObservable(this.queryName)
+            .pipe(debounceTime(2000), distinctUntilChanged())
+            .subscribe(value => {
+                this.debouncedQueryName = value
+            });
     }
+
+    dialog = inject(MatDialog)
 
     openEditDialog(element: PeriodicElement) {
         const dialogRef = this.dialog.open(EditDialog, {
