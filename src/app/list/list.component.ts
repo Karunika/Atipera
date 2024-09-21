@@ -1,4 +1,4 @@
-import { Component, inject, model, Pipe, PipeTransform } from '@angular/core'
+import { booleanAttribute, Component, inject, model, Pipe, PipeTransform, signal } from '@angular/core'
 import { NgFor } from '@angular/common'
 import { MatDialog } from '@angular/material/dialog';
 import { EditDialog } from './edit-dialog/edit-dialog.component';
@@ -6,7 +6,11 @@ import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSliderModule } from '@angular/material/slider'
 import { MatInputModule } from '@angular/material/input';
-import { debounceTime, distinctUntilChanged, Observable } from 'rxjs';
+import { MatTableModule } from '@angular/material/table'
+import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { toObservable } from '@angular/core/rxjs-interop';
 
 interface PeriodicElement {
@@ -22,14 +26,13 @@ interface Query {
     symbol: string
 }
 
-
 @Pipe({
     name: 'nameQueryFilter',
     standalone: true
 })
 export class NameQueryFilter implements PipeTransform {
     transform(elements: PeriodicElement[], query: Query) {
-        return elements.filter((element) => 
+        return elements.filter((element) =>
             element.name.startsWith(query.name)
             && element.weight >= query.weight[0]
             && element.weight <= query.weight[1]
@@ -48,6 +51,10 @@ export class NameQueryFilter implements PipeTransform {
         MatInputModule,
         FormsModule,
         MatSliderModule,
+        MatTableModule,
+        MatIconModule,
+        MatCardModule,
+        MatProgressBarModule,
         NameQueryFilter,
     ]
 })
@@ -64,11 +71,13 @@ export class ListComponent {
         { position: 9, name: 'Fluorine', weight: 18.9984, symbol: 'F' },
         { position: 10, name: 'Neon', weight: 20.1797, symbol: 'Ne' },
     ]);
+    readonly columns: string[] = ['position', 'name', 'weight', 'symbol', 'icon'];
     readonly query = model<Query>({
         name: '',
         weight: [0, 100],
         symbol: '',
     })
+    readonly loading = signal<boolean>(false)
     debouncedQuery: Query = this.query()
 
     dialog = inject(MatDialog)
@@ -78,12 +87,13 @@ export class ListComponent {
             .pipe(debounceTime(2000), distinctUntilChanged())
             .subscribe(value => {
                 this.debouncedQuery = value
+                this.loading.set(false)
             });
     }
 
-    onInputChange(property: keyof Query, event: Event, which?: number) {
-        const inputValue = (event.target as HTMLInputElement).value;
-        console.log('changing', inputValue)
+    onInputChange(property: keyof Query, event: Event | string, which?: number) {
+        this.loading.set(true)
+        const inputValue = typeof event === 'string' ? event : (event.target as HTMLInputElement).value;
 
         this.query.update((previous: Query) => {
             if (property !== 'weight') {
@@ -114,7 +124,8 @@ export class ListComponent {
 
     openEditDialog(element: PeriodicElement) {
         const dialogRef = this.dialog.open(EditDialog, {
-            data: { ...element }
+            data: { ...element },
+            width: '50%'
         })
 
         dialogRef.afterClosed().subscribe((editedElement) => {

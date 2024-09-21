@@ -11,8 +11,7 @@ import { ListComponent } from './list/list.component';
     MatSlideToggleModule,
     ListComponent
   ],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.scss'
+  templateUrl: './app.component.html'
 })
 export class AppComponent {
   title = 'atipera';

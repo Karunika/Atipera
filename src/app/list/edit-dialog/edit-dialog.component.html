@@ -1,6 +1,6 @@
 <h2 mat-dialog-title>Edit {{this.data.name}}</h2>
-<mat-dialog-content>
-    <mat-form-field>
+<mat-dialog-content class="edit-form-container">
+    <mat-form-field appearance="outline">
         <mat-label>New Name</mat-label>
         <input
             matInput
@@ -8,7 +8,7 @@
             (input)="onChangeInput('name', $event)"
         />
     </mat-form-field>
-    <mat-form-field>
+    <mat-form-field appearance="outline">
         <mat-label>New Weight</mat-label>
         <input
             matInput
@@ -17,7 +17,7 @@
             (input)="onChangeInput('weight', $event)"
         />
     </mat-form-field>
-    <mat-form-field>
+    <mat-form-field appearance="outline">
         <mat-label>New Symbol</mat-label>
         <input
             matInput
@@ -26,7 +26,7 @@
         />
     </mat-form-field>
 </mat-dialog-content>
-<mat-dialog-actions>
+<mat-dialog-actions align="end">
     <button mat-button (click)="onDiscardClick()">Discard</button>
-    <button mat-button [mat-dialog-close]="element()" cdkFocusInitial>Save</button>
+    <button mat-raised-button [mat-dialog-close]="element()" cdkFocusInitial>Save</button>
 </mat-dialog-actions>
