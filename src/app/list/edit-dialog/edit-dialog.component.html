@@ -4,8 +4,8 @@
         <mat-label>New Name</mat-label>
         <input
             matInput
-            (change)="onChangeInput('name', $event)"
             [value]="element().name"
+            (input)="onChangeInput('name', $event)"
         />
     </mat-form-field>
     <mat-form-field>
@@ -13,16 +13,16 @@
         <input
             matInput
             type="number"
-            (change)="onChangeInput('weight', $event)"
             [value]="element().weight"
+            (input)="onChangeInput('weight', $event)"
         />
     </mat-form-field>
     <mat-form-field>
         <mat-label>New Symbol</mat-label>
         <input
             matInput
-            (change)="onChangeInput('symbol', $event)"
             [value]="element().symbol"
+            (input)="onChangeInput('symbol', $event)"
         />
     </mat-form-field>
 </mat-dialog-content>

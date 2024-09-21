@@ -1,17 +1,41 @@
 <div>
     <div>
         <mat-form-field>
-            <mat-label>New Name</mat-label>
+            <mat-label>Search Name</mat-label>
             <input
                 matInput
-                [(ngModel)]="queryName"
+                [value]="query().name"
+                (input)="onInputChange('name', $event)"
+            />
+        </mat-form-field>
+        <p>{{query().weight[0]}}</p>
+        <mat-slider min="0" max="100">
+            <input
+                matSliderStartThumb
+                [value]="query().weight[0]"
+                (change)="onInputChange('weight', $event, 0)"
+            >
+            <input
+                matSliderEndThumb
+                [value]="query().weight[1]"
+                (change)="onInputChange('weight', $event, 1)"
+            >
+        </mat-slider>
+        <p>{{query().weight[1]}}</p>
+        <mat-form-field>
+            <mat-label>Search Symbol</mat-label>
+            <input
+                matInput
+                [value]="query().symbol"
+                (input)="onInputChange('symbol', $event)"
             />
         </mat-form-field>
     </div>
 
-    <ul *ngFor="let element of ELEMENT_DATA() | nameQueryFilter: debouncedQueryName">
+    <ul *ngFor="let element of ELEMENT_DATA() | nameQueryFilter: debouncedQuery">
         <li>
             {{element.name}}
+            {{element.weight}}
             <button (click)="openEditDialog(element)">edit</button>
         </li>
     </ul>
