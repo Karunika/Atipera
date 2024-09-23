@@ -1,4 +1,4 @@
-import { booleanAttribute, Component, inject, model, Pipe, PipeTransform, signal } from '@angular/core'
+import { Component, inject, model, Pipe, PipeTransform, signal } from '@angular/core'
 import { NgFor } from '@angular/common'
 import { MatDialog } from '@angular/material/dialog';
 import { EditDialog } from './edit-dialog/edit-dialog.component';
