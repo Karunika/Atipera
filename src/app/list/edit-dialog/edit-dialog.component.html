@@ -6,8 +6,12 @@
             matInput
             [value]="element().name"
             (input)="onChangeInput('name', $event)"
+            cdkFocusInitial
         />
     </mat-form-field>
+    @if (nameError$ | async) {
+        <mat-error> {{nameError$ | async}}</mat-error>
+    }
     <mat-form-field appearance="outline">
         <mat-label>New Weight</mat-label>
         <input
@@ -17,6 +21,9 @@
             (input)="onChangeInput('weight', $event)"
         />
     </mat-form-field>
+    @if (weightError$ | async) {
+        <mat-error> {{weightError$ | async}}</mat-error>
+    }
     <mat-form-field appearance="outline">
         <mat-label>New Symbol</mat-label>
         <input
@@ -25,8 +32,16 @@
             (input)="onChangeInput('symbol', $event)"
         />
     </mat-form-field>
+    @if (symbolError$ | async) {
+        <mat-error> {{symbolError$ | async}}</mat-error>
+    }
 </mat-dialog-content>
 <mat-dialog-actions align="end">
     <button mat-button (click)="onDiscardClick()">Discard</button>
-    <button mat-raised-button [mat-dialog-close]="element()" cdkFocusInitial>Save</button>
+    <button
+        mat-raised-button
+        [mat-dialog-close]="element()"
+        [disabled]="isError$ | async"
+        [class.disabled]="isError$ | async"
+    >Save</button>
 </mat-dialog-actions>
