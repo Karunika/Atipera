@@ -68,9 +68,10 @@
         </div>
     </mat-card>
 
-    <mat-progress-bar mode="query" class="table-container" class="not-loading" [class.loading-bar]="loading$ | async"></mat-progress-bar>
-
     <mat-card class="table-container" appearance="outlined" [class.loading]="loading$ | async">
+        @if (loading$ | async) {
+            <mat-spinner class="spinner-loading" [diameter]="50"></mat-spinner>
+        }
         <table mat-table [dataSource]="(elementData$ | async) || [] | queryFilter: (debouncedQuery$ | async)">
             <colgroup>
                 <col width="10%" />
