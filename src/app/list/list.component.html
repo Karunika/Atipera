@@ -30,7 +30,7 @@
                 [value]="symbol$ | async"
                 (input)="inputChangeHandler.next($event)"
             />
-            @if (query$ | async) {
+            @if (symbol$ | async) {
                 <button
                     matSuffix
                     mat-icon-button
