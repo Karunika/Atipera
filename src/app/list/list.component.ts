@@ -1,8 +1,7 @@
 import { Component, inject, model, Pipe, PipeTransform, signal } from '@angular/core'
-import { NgFor } from '@angular/common'
+import { AsyncPipe, NgFor } from '@angular/common'
 import { MatDialog } from '@angular/material/dialog';
 import { EditDialog } from './edit-dialog/edit-dialog.component';
-import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSliderModule } from '@angular/material/slider'
 import { MatInputModule } from '@angular/material/input';
@@ -10,36 +9,14 @@ import { MatTableModule } from '@angular/material/table'
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
-import { toObservable } from '@angular/core/rxjs-interop';
-
-interface PeriodicElement {
-    position: number,
-    name: string,
-    weight: number,
-    symbol: string
-}
-
-interface Query {
-    name: string,
-    weight: [number, number],
-    symbol: string
-}
-
-@Pipe({
-    name: 'nameQueryFilter',
-    standalone: true
-})
-export class NameQueryFilter implements PipeTransform {
-    transform(elements: PeriodicElement[], query: Query) {
-        return elements.filter((element) =>
-            element.name.startsWith(query.name)
-            && element.weight >= query.weight[0]
-            && element.weight <= query.weight[1]
-            && element.symbol.startsWith(query.symbol)
-        )
-    }
-}
+import { debounceTime, distinctUntilChanged, map, Subject, switchMap, tap } from 'rxjs';
+import { rxState } from '@rx-angular/state';
+import { PeriodicElement } from '../../interfaces/PeriodicElement';
+import { Query } from '../../interfaces/Query';
+import { AppState } from '../../interfaces/AppState';
+import { QueryFilter } from '../../pipes/queryFilter';
+import { COLUMNS, ELEMENT_DATA, QUERY } from '../../assets/data';
+import { updateQuery } from './utils';
 
 @Component({
     selector: 'app-list',
@@ -47,80 +24,70 @@ export class NameQueryFilter implements PipeTransform {
     standalone: true,
     imports: [
         NgFor,
+        AsyncPipe,
         MatFormFieldModule,
         MatInputModule,
-        FormsModule,
         MatSliderModule,
         MatTableModule,
         MatIconModule,
         MatCardModule,
         MatProgressBarModule,
-        NameQueryFilter,
+        QueryFilter,
     ]
 })
 export class ListComponent {
-    readonly ELEMENT_DATA = model<PeriodicElement[]>([
-        { position: 1, name: 'Hydrogen', weight: 1.0079, symbol: 'H' },
-        { position: 2, name: 'Helium', weight: 4.0026, symbol: 'He' },
-        { position: 3, name: 'Lithium', weight: 6.941, symbol: 'Li' },
-        { position: 4, name: 'Beryllium', weight: 9.0122, symbol: 'Be' },
-        { position: 5, name: 'Boron', weight: 10.811, symbol: 'B' },
-        { position: 6, name: 'Carbon', weight: 12.0107, symbol: 'C' },
-        { position: 7, name: 'Nitrogen', weight: 14.0067, symbol: 'N' },
-        { position: 8, name: 'Oxygen', weight: 15.9994, symbol: 'O' },
-        { position: 9, name: 'Fluorine', weight: 18.9984, symbol: 'F' },
-        { position: 10, name: 'Neon', weight: 20.1797, symbol: 'Ne' },
-    ]);
-    readonly columns: string[] = ['position', 'name', 'weight', 'symbol', 'icon'];
-    readonly query = model<Query>({
-        name: '',
-        weight: [0, 100],
-        symbol: '',
-    })
-    readonly loading = signal<boolean>(false)
-    debouncedQuery: Query = this.query()
+    readonly columns = COLUMNS
 
-    dialog = inject(MatDialog)
+    private dialog = inject(MatDialog)
 
-    constructor() {
-        toObservable(this.query)
-            .pipe(debounceTime(2000), distinctUntilChanged())
-            .subscribe(value => {
-                this.debouncedQuery = value
-                this.loading.set(false)
-            });
-    }
+    inputChangeHandler = new Subject<Event>()
+    clearQueryInput = new Subject<keyof Query>()
+    editElementHandler = new Subject<PeriodicElement>()
 
-    onInputChange(property: keyof Query, event: Event | string, which?: number) {
-        this.loading.set(true)
-        const inputValue = typeof event === 'string' ? event : (event.target as HTMLInputElement).value;
-
-        this.query.update((previous: Query) => {
-            if (property !== 'weight') {
-                return {
-                    ...previous,
-                    [property]: inputValue
-                };
-            }
-
-            if (typeof which === 'number') {
-                const parsedValue = parseInt(inputValue, 10);
-
-                if (isNaN(parsedValue)) {
-                    return previous;
-                }
-
-                return {
-                    ...previous,
-                    weight: previous.weight.map((v, i) =>
-                        i === which ? parsedValue : v
-                    ) as [number, number]
-                };
-            }
-
-            return previous;
+    private state = rxState<AppState>(({ set, connect }) => {
+        set({
+            elementData: ELEMENT_DATA,
+            query: QUERY,
+            loading: false
         })
-    }
+
+        connect('query', this.inputChangeHandler, ({ query }: AppState, event: Event) => {
+            set({ loading: true })
+            const input = event.target as HTMLInputElement;
+
+            return updateQuery(query, input.id as keyof Query, input.value)
+        })
+
+        connect('query', this.clearQueryInput, ({ query }: AppState, property: keyof Query) => {
+            return {
+                ...query,
+                [property]: QUERY[property]
+            }
+        })
+
+        connect('elementData', this.editElementHandler, ({ elementData }: AppState, editedElement: PeriodicElement) => {
+            return elementData.map((element: PeriodicElement) => (
+                editedElement.position === element.position ?
+                    { ...editedElement } : element
+            ))
+        })
+    })
+
+    elementData$ = this.state.select('elementData')
+
+    query$ = this.state.select('query')
+    name$ = this.query$.pipe(map(q => q.name))
+    symbol$ = this.query$.pipe(map(q => q.symbol))
+    lowerWeight$ = this.query$.pipe(map(q => q.weight[0]))
+    upperWeight$ = this.query$.pipe(map(q => q.weight[1]))
+
+    loading$ = this.state.select('loading')
+
+    debouncedQuery$ = this.query$.pipe(
+        debounceTime(2000),
+        distinctUntilChanged(),
+        tap(() => this.state.set({ loading: false }))
+    )
 
     openEditDialog(element: PeriodicElement) {
         const dialogRef = this.dialog.open(EditDialog, {
@@ -128,15 +95,7 @@ export class ListComponent {
             width: '50%'
         })
 
-        dialogRef.afterClosed().subscribe((editedElement) => {
-            if (editedElement !== undefined) {
-                this.ELEMENT_DATA.update(element_data => (
-                    element_data.map((element) => (
-                        editedElement.position === element.position ?
-                            { ...editedElement } : element
-                    ))
-                ))
-            }
-        })
+        dialogRef.afterClosed().pipe()
+            .subscribe(this.editElementHandler)
     }
 }
